@@ -87,6 +87,7 @@ class ItemsView(ft.View):
 				ft.DataColumn(ft.Text("Категория")),
 				ft.DataColumn(ft.Text("Сумма")),
 				ft.DataColumn(ft.Text("Фото")),
+				ft.DataColumn(ft.Text("")),
 			],
 			rows=[],
 			expand=True
@@ -95,6 +96,8 @@ class ItemsView(ft.View):
 		self.controls.append(ft.AppBar(title=ft.Text("База данных"), bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST))
 		self.start_filter_field = ft.TextField(label="Начальная дата")
 		self.end_filter_field = ft.TextField(label="Конечная дата")
+		self.minimum_sum_field = ft.TextField(label="Минимальная сумма")
+		self.maximum_sum_field = ft.TextField(label="Максимальная сумма")
 		self.category_dropdown = ft.Dropdown(
 				label="Категория",
 				options=[ft.dropdown.Option("", "Все")] + [ft.dropdown.Option(c["category"]) for c in self.load_categories(return_categories=True)],
@@ -115,59 +118,43 @@ class ItemsView(ft.View):
 			icon=ft.Icons.PERSON, 
 			on_click=lambda e: self.page.go('/user')
 		)
-
-		if self.page.current_session_admin:
-			self.controls.append(
-				ft.Column([
-					ft.Row([
-						self.category_button,
-						self.user_button,
-						ft.ElevatedButton(
-							"Сформировать отчет", 
-							on_click=self.get_report
-						),
-						ft.ElevatedButton(
-							"Добавить объект", 
-							on_click=lambda e: self.page.go('/newitem')
-						),
-						self.reload_button
-					]),
-					ft.Row([
-						self.category_dropdown,
-						self.start_filter_field,
-						self.end_filter_field,
-						ft.ElevatedButton(
-							"Отфильтровать", 
-							on_click=self.apply_filter
-						)
-					]),
-				])
-			),
-		else:
-			self.controls.append(
-				ft.Column([
-					ft.Row([
-						ft.ElevatedButton(
-							"Сформировать отчет", 
-							on_click=self.get_report
-						),
-						ft.ElevatedButton(
-							"Добавить объект", 
-							on_click=lambda e: self.page.go('/newitem')
-						),
-						self.reload_button
-					]),
-					ft.Row([
-						self.category_dropdown,
-						self.start_filter_field,
-						self.end_filter_field,
-						ft.ElevatedButton(
-							"Отфильтровать", 
-							on_click=self.apply_filter
-						)
-					]),
-				])
-			),
+		
+		is_admin = self.page.current_session_admin
+		self.controls.append(
+			ft.Column([
+				ft.Row([
+					self.category_button if is_admin else ft.Row([]),
+					self.user_button if is_admin else ft.Row([]),
+					ft.ElevatedButton(
+						"Сформировать отчет", 
+						on_click=self.get_report
+					),
+					ft.ElevatedButton(
+						"Добавить объект", 
+						on_click=lambda e: self.page.go('/newitem')
+					),
+					self.reload_button
+				]),
+				ft.Row([
+					ft.Column([
+						ft.Row([
+							self.category_dropdown,
+							self.start_filter_field,
+							self.end_filter_field
+						]),
+						ft.Row([
+							self.minimum_sum_field,
+							self.maximum_sum_field,
+							ft.ElevatedButton(
+								"Отфильтровать", 
+								on_click=self.apply_filter
+							)
+						])
+					])
+					
+				]),
+			])
+		)
 		
 
 		self.controls.append(self.item_count)
@@ -189,14 +176,11 @@ class ItemsView(ft.View):
 		date_ = utils.date_to_text(item['creation_date'])
 
 		def on_photo_click(e):
-			# Setting params to show item info on click
 			img_path = urllib.parse.quote(os.path.join(self.page.STORAGE_PATH, 'temp', item['file_name']))
-			category = urllib.parse.quote(item['category'])
-			id_ = urllib.parse.quote(str(item['id']))
-			date = urllib.parse.quote(date_)
-			sum_ = urllib.parse.quote(str(item['sum']))
-			route = f"/detailedview?id={id_}&img={img_path}&category={category}&date={date}&sum={sum_}"
-			self.page.go(route)
+			print(self.page.STORAGE_PATH)
+			print(item['file_name'])
+			print(img_path)
+			utils.open_image(img_path)
 
 		self.table.rows.append(
 			ft.DataRow(
@@ -204,15 +188,30 @@ class ItemsView(ft.View):
 					ft.DataCell(ft.Text(date_, selectable=True)),
 					ft.DataCell(ft.Text(item['category'], selectable=True)),
 					ft.DataCell(ft.Text(item['sum'], selectable=True)),
-					# ft.DataCell(ft.Text(photo))
 					controls.ClickableDatacell( 
 						text='Посмотреть фото', 
 						on_tap=on_photo_click
-					)
+					),
+					ft.DataCell(ft.ElevatedButton(
+						text="Удалить",
+						icon=ft.Icons.DELETE, 
+						on_click=lambda e: self.delete_item(id=item['id'])
+					))
 				],
 			)
 		)
 		self.page.update()
+
+
+	def delete_item(self, e=None, id=None):
+		response = requests.delete(f"{self.page.ROOT_URL}/delete-item/{int(id)}",  headers=self.page.special_request_headers)
+		print(response)
+		if response.status_code in (200, 204):
+			print(f"=> Deleted item id={id}")
+			self.page.filtered_items = None
+			self.page.loaded_items = None
+			self.page.go("/items")
+
 
 	""" 
 	Load list of available categories from server
@@ -266,35 +265,36 @@ class ItemsView(ft.View):
 	def reset_filter(self, e=None):
 		self.start_filter_field.value = None
 		self.end_filter_field.value = None
+		self.minimum_sum_field.value = None
+		self.maximum_sum_field.value = None
 		self.category_dropdown.value = "Все"
 		self.page.filtered_items = None
 		self.page.loaded_items = None
 		self.load_items()
 		print("=> Filter was reset")
 
-	""" Get item filtered by date"""	
+	""" Get item filtered by date """	
 	def apply_filter(self, e):
 		start = utils.date_to_sql(self.start_filter_field.value)
 		end = utils.date_to_sql(self.end_filter_field.value)
+
+		minimum_sum = self.minimum_sum_field.value
+		maximum_sum = self.maximum_sum_field.value
+		minimum_sum = int(minimum_sum) if minimum_sum != '' else 0
+		maximum_sum = int(maximum_sum) if maximum_sum != '' else float('inf')
+
 		category = self.category_dropdown.value
-		if start is None and end is None:
-			start = "all"
-			end = "all"
-		if category in [None, "Все"]:
-			category = "all"
-		if all([start, end, category]):
-			# if no filters set, load all items
-			if start == end == category == "all":
-				self.reset_filter() 
-				return
-			else:
-				filtered = utils.get_filtered_items(self.page.loaded_items, start, end, category)
-				if not filtered is None:
-					self.page.filtered_items = filtered
-					self.load_items()
-					print("=> Items table filtered")
-				else:
-					print("! Error while filtering items")
+		if category == "Все": 
+			category = None
+
+		if category in [None, "Все"] and start == end == None and minimum_sum == 0 and maximum_sum == float('inf'):
+			print("Filter not applied: parameters not set")
+			return
+
+		filtered = utils.get_filtered_items(self.page.loaded_items, start, end, minimum_sum, maximum_sum, category)
+		self.page.filtered_items = filtered
+		self.load_items()
+
 
 	""" 
 	Get report from server.
@@ -325,108 +325,7 @@ class ItemsView(ft.View):
 			self.item_count.update()
 		except Exception as e:
 			print(e)
-
-""" Detailed item view with image and other info"""
-class DetailedView(ft.View):
-	def __init__(self, page: ft.Page, id, image_src: str, category: str, date: str, sum: str):
-		super().__init__(route="/detailedview")
-		self.page = page
-		self.id = id
-
-		self.delete_button = ft.ElevatedButton(
-			text="Удалить",
-			icon=ft.Icons.DELETE, 
-			on_click=lambda e: utils.show_dialog(self,
-			 "Вы уверены, что хотите удалить этот объект?", 
-			 "Позже его нельзя будет восстановить"
-			 )
-		)
-
-		# Кнопка "Назад" в AppBar
-		self.appbar = ft.AppBar(
-			leading=ft.IconButton(
-				icon=ft.Icons.ARROW_BACK,
-				tooltip="Назад",
-				on_click=lambda e: self.page.go("/items")
-			),
-			actions=[self.delete_button],
-			title=ft.Text("Просмотр изображения"),
-			bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST
-		)
-
-		# Изображение
-		img = ft.Image(
-			src=image_src,
-			width=400,
-			# height=300,
-			fit=ft.ImageFit.CONTAIN,
-			border_radius=10,
-		)
-
-		# Тексты под изображением
-		category_text = ft.Text(
-			f"Категория: {category}",
-			size=14,
-			text_align=ft.TextAlign.CENTER,
-			expand=True,
-		)
-		date_text = ft.Text(
-			f"Дата: {date}",
-			size=14,
-			text_align=ft.TextAlign.CENTER,
-			expand=True,
-		)
-		sum_text = ft.Text(
-			f"Сумма: {sum}",
-			size=14,
-			text_align=ft.TextAlign.CENTER,
-			expand=True,
-		)
-
-		# Центрируем контент с помощью Row и Column
-		self.content = ft.Column(
-			controls=[
-				ft.Row(
-					controls=[date_text, category_text, sum_text],
-					alignment=ft.MainAxisAlignment.CENTER,
-					vertical_alignment=ft.CrossAxisAlignment.CENTER,
-					expand=True
-				),
-				img
-			],
-			alignment=ft.MainAxisAlignment.CENTER,
-			horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-			spacing=10,
-			expand=True,
-			height=400, scroll=ft.ScrollMode.AUTO
-		)
-
-		self.page.dialog = ft.AlertDialog(
-			title=ft.Container(ft.Text(""), alignment=ft.alignment.center),
-			content=ft.Text(""),
-			actions=[
-				ft.TextButton("Отмена", on_click=lambda e: utils.close_dialog(self)),
-				ft.TextButton("Удалить", on_click=self.delete_item)
-			],
-			actions_alignment=ft.MainAxisAlignment.CENTER,
-		)
-
-		# Добавляем AppBar и контент во View
-		self.controls.append(self.appbar)
-		self.controls.append(self.content)
-	
-
-	def delete_item(self, e=None):
-		response = requests.delete(f"{self.page.ROOT_URL}/delete-item/{int(self.id)}",  headers=self.page.special_request_headers)
-		print(response)
-		if response.status_code in (200, 204):
-			print(f"=> Deleted item id={id}")
-			utils.close_dialog(self)
-			self.page.filtered_items = None
-			self.page.loaded_items = None
-			self.page.go("/items")
-
-
+			
 
 """ Creating new item """
 class NewItemView(ft.View):

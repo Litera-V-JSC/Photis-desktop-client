@@ -21,7 +21,7 @@ def main(page: ft.Page):
 			storage_dir = os.path.realpath(config["STORAGE_PATH"])
 		os.makedirs(os.path.join(storage_dir, 'temp'), exist_ok=True)
 		page.STORAGE_PATH = storage_dir
-		print(f"=> Created storage dir: {storage_dir}")
+		print(f"=> Created temprorary storage: {storage_dir}")
 		print("=> Config loaded")
 
 
@@ -120,7 +120,7 @@ def main(page: ft.Page):
 	page.on_route_change = route_change
 	page.on_view_pop = view_pop
 	page.go("/login")
-	print("==> Ready to work")
+	print("===> Ready to work <===")
 
 
 ft.app(main)

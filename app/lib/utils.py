@@ -1,5 +1,6 @@
 import os
 import sys
+import subprocess
 import datetime
 import re
 import flet as ft
@@ -57,7 +58,6 @@ def date_to_sql(date: str):
 		return None
 
 
-
 """ Utils for file attachment """
 
 """ 
@@ -91,7 +91,6 @@ def file_picked(self, e: ft.FilePickerResultEvent):
 	self.update()
 
 
-""" Alert dialog handlers """
 def show_dialog(self, text="", desc=""):
 	self.page.dialog.title.content.value = text
 	self.page.dialog.content.value = desc
@@ -105,15 +104,30 @@ def close_dialog(self):
 	print("Dialog closed")
 
 
-def get_filtered_items(items, start, end, category):
-	try:
-		if start == end == "all":
-			return [r for r in items if r["category"] == category]
-		elif category == 'all':
-			return [r for r in items if start <= date_to_sql(date_to_text(r["creation_date"])) <= end]
-		return [r for r in items if r["category"] == category and \
-			start <= date_to_sql(date_to_text(r["creation_date"])) <= end]
-	except Exception as e:
-		print(e)
-		return None
+""" Open image with standart system viewer """
+def open_image(image_path):
+	if sys.platform.startswith('darwin'):
+		# macOS
+		subprocess.run(['open', image_path])
+	elif sys.platform.startswith('win'):
+		# Windows
+		subprocess.run(['start', '', image_path], shell=True)
+	elif sys.platform.startswith('linux'):
+		# Linux
+		subprocess.run(['xdg-open', image_path])
+
+
+def get_filtered_items(items, start, end, minimum_sum, maximum_sum, category):
+	print(start, end, minimum_sum, maximum_sum, category)
+
+	if start is None and end is None:
+		filtered_by_date_and_sum = [r for r in items if minimum_sum <= int(r['sum']) <= maximum_sum]
+	elif start == None and not end is None:
+		filtered_by_date_and_sum = [r for r in items if date_to_sql(date_to_text(r["creation_date"])) <= end and minimum_sum <= int(r['sum']) <= maximum_sum]
+	else:
+		filtered_by_date_and_sum = [r for r in items if start <= date_to_sql(date_to_text(r["creation_date"])) and minimum_sum <= int(r['sum']) <= maximum_sum]
+	
+	if category is None:
+		return filtered_by_date_and_sum
+	return [r for r in filtered_by_date_and_sum if r["category"] == category]
 
