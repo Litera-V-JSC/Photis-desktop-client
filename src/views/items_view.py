@@ -112,9 +112,6 @@ class ItemsView(BaseView):
 
 		def on_photo_click(e):
 			img_path = urllib.parse.quote(os.path.join(self.page.STORAGE_PATH, 'temp', item['file_name']))
-			print(self.page.STORAGE_PATH)
-			print(item['file_name'])
-			print(img_path)
 			utils.open_image(img_path)
 
 		self.table.rows.append(
@@ -147,7 +144,7 @@ class ItemsView(BaseView):
 		response = requests.delete(f"{self.page.ROOT_URL}/delete-item/{int(id)}",  headers=self.page.content_provided_request_headers)
 		print(response)
 		if response.status_code in (200, 204):
-			print(f"=> Deleted item id={id}")
+			print(f"Deleted item id={id}")
 			self.page.filtered_items = None
 			self.page.loaded_items = None
 			self.page.go("/items")
@@ -209,7 +206,7 @@ class ItemsView(BaseView):
 			self.page.loaded_items = loaded_items
 			for item in self.page.loaded_items:
 				self.add_row(item)
-		print("=> Loaded all items from server")
+		print("Loaded all items from server")
 
 	""" Reset filter fields and updates items table """
 	def reset_filter(self, e=None):
@@ -221,7 +218,7 @@ class ItemsView(BaseView):
 		self.page.filtered_items = None
 		self.page.loaded_items = None
 		self.load_items()
-		print("=> Filter was reset")
+		print("Filter was reset")
 
 	""" Get item filtered by date """	
 	def apply_filter(self, e):
@@ -267,11 +264,11 @@ class ItemsView(BaseView):
 			with open(path, 'wb') as f:
 				f.write(resp.content)
 				utils.show_dialog(self, text="Отчет сформирован", desc=f"Путь к файлу: {path}")
-				print("=> Report loaded")
+				print("Report loaded")
 
 	def update_count(self, items):
 		try:
 			self.item_count.value = f"Всего позиций: {len(items)}"
 			self.item_count.update()
 		except Exception as e:
-			print(e)
+			pass

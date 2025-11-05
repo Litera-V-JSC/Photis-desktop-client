@@ -122,7 +122,7 @@ class CategoryView(BaseView):
 			self.page.categories = resp.json()
 			for category in self.page.categories:
 				self.add_row(category)
-			print("=> Loaded categories")
+			print("Loaded categories")
 
 	def delete_category(self, e=None, category=None):
 		if any([category["category"]==item["category"] for item in self.page.loaded_items]):

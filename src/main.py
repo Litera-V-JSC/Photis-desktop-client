@@ -18,16 +18,19 @@ def main(page: ft.Page):
 		page.ROOT_URL = config["ROOT_URL"] # root url for requests to API
 		page.TIMER_RATE = config["TIMER_RATE"]
 		page.THEME = config["THEME"]
-		print(f"=> Set default params: theme={page.THEME}, timer rate={page.TIMER_RATE}, root url={page.ROOT_URL}")
+		print(f"Startup params: theme={page.THEME}, timer rate={page.TIMER_RATE}, root url={page.ROOT_URL}")
 		
-		if config["STORAGE_PATH"] == "":
-			storage_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), 'storage'))
-		else:
-			storage_dir = os.path.realpath(config["STORAGE_PATH"])
-		os.makedirs(os.path.join(storage_dir, 'temp'), exist_ok=True)
-		page.STORAGE_PATH = storage_dir
-		print(f"=> Created temprorary storage: {storage_dir}")
-		print("=> Config loaded")
+		page.STORAGE_PATH = config["STORAGE_PATH"]
+		if page.STORAGE_PATH == "":
+			page.STORAGE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), 'storage'))
+
+		page.TEMP_STORAGE_PATH = os.path.join(page.STORAGE_PATH, 'temp')
+
+		os.makedirs(page.TEMP_STORAGE_PATH, exist_ok=True)
+
+		print(f"Created storage: {page.STORAGE_PATH}")
+		print(f"Created TEMP storage: {page.TEMP_STORAGE_PATH}")
+		print("Config loaded")
 
 
 	# setting app theme
@@ -39,7 +42,6 @@ def main(page: ft.Page):
 		page.theme = ft.Theme(color_scheme_seed='#D4E9F7')
 	page.theme_mode=ft.ThemeMode.LIGHT
 
-	# need to fix icon
 	page.window.prevent_close = True
 	page.window.icon = os.path.join(os.path.dirname(__file__), "assets", "icon.ico")
 
@@ -64,11 +66,10 @@ def main(page: ft.Page):
 		if e.data == "close":
 			# Removing temp files
 			print("=> Application is closing. Performing cleanup...")
-			temp_dir = os.path.join(page.STORAGE_PATH, 'temp')
 			count = 0
-			start_count = len(os.listdir(temp_dir))
-			for item_name in os.listdir(temp_dir):
-				item_path = os.path.join(temp_dir, item_name)
+			start_count = len(os.listdir(page.TEMP_STORAGE_PATH))
+			for item_name in os.listdir(page.TEMP_STORAGE_PATH):
+				item_path = os.path.join(page.TEMP_STORAGE_PATH, item_name)
 				if os.path.isfile(item_path):
 					os.remove(item_path)
 					count += 1
@@ -130,4 +131,6 @@ def main(page: ft.Page):
 	print("===> Ready to work <===")
 
 
-ft.app(main)
+if __name__ == "__main__":
+	ft.app(main)
+	

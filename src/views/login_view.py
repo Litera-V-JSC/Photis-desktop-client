@@ -42,7 +42,7 @@ class LoginView(BaseView):
 		self.result_text.value = "Выполняется вход..."
 		self.result_text.update()
 		resp = requests.get(f'{self.page.ROOT_URL}/login', json=credentials)
-		print(resp)
+
 		if resp.status_code in (200, 204):
 			token = resp.json()['access_token']
 			user_data = resp.json()['user_data']
@@ -54,6 +54,7 @@ class LoginView(BaseView):
 				'Authorization': f'Bearer {token}'
 			}
 			self.result_text.value = "Успешный вход!"
+			print("Logged in !")
 			self.page.go("/items")
 		else:
 			self.result_text.value = "Неверный логин или пароль"

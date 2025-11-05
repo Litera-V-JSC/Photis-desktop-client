@@ -174,7 +174,7 @@ class NewItemView(ft.View):
 			try:
 				self.submit_button.update()
 			except:
-				print("Submit button disabled")
+				pass
 
 	""" Release camera """
 	def close_camera_connection(self):
@@ -188,14 +188,14 @@ class NewItemView(ft.View):
 	""" Open or close camera stream """
 	def toggle_camera(self, e=None):
 		if not self.camera_on:
-			print("=> Stream started")
+			print("Camera stream started")
 			if not self.stream.available:
 				self.stream.create_stream() 
 			self.camera_on = True
 			self.photo_button.disabled = False
 			self.toggle_camera_button.text = "Выключить камеру"
 		else:
-			print("=> Stream stopped")
+			print("Camera stream stopped")
 			self.close_camera_connection()
 			self.photo_button.disabled = True
 			self.toggle_camera_button.text = "Включить камеру"
@@ -209,7 +209,7 @@ class NewItemView(ft.View):
 		self.check_timer.stop()
 		if not self.file_path is None:
 			os.remove(self.file_path)
-		print(f"=> Stream stopped, cap released. Temp files removed")
+		print(f"Cap released. Temp files removed")
 		self.page.go("/items")
 		
 	""" Update frame in photo_placeholder """
@@ -236,14 +236,14 @@ class NewItemView(ft.View):
 	def take_photo(self, e):
 		frame_base64 = self.stream.get_frame()
 		if frame_base64:
-			print("=> Made photo")
+			print("Made photo")
 			utils.show_dialog(self, "Фото сделано!", "Фотография была прикреплена к форме отправки")
 			
 			filename = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + '.png'
 			utils.upload_file_base64(frame_base64, os.path.join(self.page.STORAGE_PATH, 'temp', filename))
 			utils.update_attachment_data(self, os.path.join(self.page.STORAGE_PATH, 'temp', filename), filename, frame_base64, "screenshot")
 		else:
-			print("! Base64 converting error, photo was not made")
+			print("Base64 converting error, photo was not made")
 			utils.show_dialog(self, "Ошибка", "Некорректный источник")
 		self.page.update()
 
@@ -262,7 +262,7 @@ class NewItemView(ft.View):
 				return
 
 		except Exception as e:
-			print(f"! Error while converting data: {e}")
+			print(f"Error while converting data: {e}")
 			utils.show_dialog(self, "Ошибка", "Сумма введена некорректно. В поле суммы необходимо вносить только числовые значения")
 			return
 

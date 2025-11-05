@@ -87,7 +87,7 @@ class UserView(BaseView):
 		password = self.password_field.value
 		admin = self.admin_rights_dropdown.value
 		if not str(username).isalnum() or not str(password).isalnum() or int(admin) not in [0, 1]:
-			print(f"! Wrong input data format")
+			print(f"Wrong input data format")
 			utils.show_dialog(self, "Заполните данные!", "Проверьте, что в каждом поле указано значение")
 		else:
 			new_user = json.dumps({
@@ -140,7 +140,7 @@ class UserView(BaseView):
 			self.table.rows.clear()
 			for user in resp.json():
 				self.add_row(user)
-			print("=> Loaded users")
+			print("Loaded users")
 
 	def delete_user(self, e=None, username=None):
 		if username == self.page.current_session_username:

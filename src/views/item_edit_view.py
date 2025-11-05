@@ -117,7 +117,7 @@ class ItemEditView(BaseView):
 				return
 
 		except Exception as e:
-			print(f"! Error while converting data: {e}")
+			print(f"Error while converting data: {e}")
 			utils.show_dialog(self, "Ошибка", "Сумма введена некорректно. В поле суммы необходимо вносить только числовые значения")
 			return
 
