@@ -1,5 +1,10 @@
 import flet as ft
-import views
+from views.login_view import LoginView
+from views.items_view import ItemsView
+from views.item_edit_view import ItemEditView
+from views.category_view import CategoryView
+from views.user_view import UserView
+from views.new_item_view import NewItemView
 import os
 import sys
 import json
@@ -97,18 +102,17 @@ def main(page: ft.Page):
 		print(f"- {page.route}")
 		page.views.clear()
 		if page.route == '/login':
-			page.views.append(views.LoginView(page))
+			page.views.append(LoginView(page))
 		elif page.route == "/items":
-			page.views.append(views.ItemsView(page))
+			page.views.append(ItemsView(page))
 		elif page.route == "/newitem":
-			page.views.append(views.NewItemView(page))
+			page.views.append(NewItemView(page))
 		elif page.route.startswith("/edititem"):
-			print("---------")
-			page.views.append(views.ItemEditView(page, *parse_edit_view_params()))
+			page.views.append(ItemEditView(page, *parse_edit_view_params()))
 		elif page.route == "/category":
-			page.views.append(views.CategoryView(page))
+			page.views.append(CategoryView(page))
 		elif page.route == "/user":
-			page.views.append(views.UserView(page))
+			page.views.append(UserView(page))
 		page.update()
 			
 

@@ -8,7 +8,6 @@ import json
 import os
 import urllib.parse
 import datetime
-import cv2 as cv
 import base64
 
 
