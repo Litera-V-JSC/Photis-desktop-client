@@ -48,6 +48,8 @@ def main(page: ft.Page):
 	# needed for requests to api
 	page.token = None
 	page.request_headers = None
+	# for requests that send json data
+	page.content_provided_request_headers = None
 	# stroring loaded objects
 	page.loaded_items = None
 	page.filtered_items = None 

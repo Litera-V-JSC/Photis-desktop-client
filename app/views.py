@@ -60,7 +60,7 @@ class LoginView(ft.View):
 			self.page.current_session_username = user_data['username']
 			self.page.current_session_admin = user_data['admin']
 			self.page.request_headers = {'Authorization': f'Bearer {token}'}
-			self.page.special_request_headers = {
+			self.page.content_provided_request_headers = {
 				'Content-Type': 'application/json',
 				'Authorization': f'Bearer {token}'
 			}
@@ -204,7 +204,7 @@ class ItemsView(ft.View):
 
 
 	def delete_item(self, e=None, id=None):
-		response = requests.delete(f"{self.page.ROOT_URL}/delete-item/{int(id)}",  headers=self.page.special_request_headers)
+		response = requests.delete(f"{self.page.ROOT_URL}/delete-item/{int(id)}",  headers=self.page.content_provided_request_headers)
 		print(response)
 		if response.status_code in (200, 204):
 			print(f"=> Deleted item id={id}")
@@ -309,7 +309,7 @@ class ItemsView(ft.View):
 		id_list = json.dumps({
 			"id_list": [int(item['id']) for item in items]
 		})
-		resp = requests.get(f'{self.page.ROOT_URL}/report', data=id_list, headers=self.page.special_request_headers)
+		resp = requests.get(f'{self.page.ROOT_URL}/report', data=id_list, headers=self.page.content_provided_request_headers)
 		print(resp)
 		if resp.status_code in [200, 204]:
 			filename = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + '.pdf'
@@ -325,7 +325,136 @@ class ItemsView(ft.View):
 			self.item_count.update()
 		except Exception as e:
 			print(e)
-			
+
+
+
+""" Item edit panel """
+class ItemEditView(ft.View):
+	def __init__(self, page: ft.Page):
+		super().__init__(route='/edititem')
+		self.page = page
+
+		self.file_picker = ft.FilePicker(on_result=lambda e: utils.file_picked(self, e))
+		self.page.overlay.append(self.file_picker)
+		self.file_path = None
+
+		self.appbar = ft.AppBar(
+			leading=ft.IconButton(
+				icon=ft.Icons.ARROW_BACK,
+				tooltip="Назад",
+				on_click=self.on_exit
+			),
+			title=ft.Text("Редактирование информации"),
+			bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST
+		)
+
+		# Поля формы
+		self.category_dropdown = ft.Dropdown(
+				label="Категория",
+				options=[ft.dropdown.Option(c["category"]) for c in self.page.categories],
+		)
+		self.sum_field = ft.TextField(
+			label="Сумма",
+			hint_text="Введите сумму",
+			keyboard_type=ft.KeyboardType.NUMBER,
+			width=200
+		)
+		self.date_field = ft.TextField(
+			label="Дата",
+			width=200,
+			value=datetime.date.today().strftime('%d.%m.%Y'),
+		)
+
+		self.file_name_text = ft.Text("Файл не выбран", italic=True, size=12)
+
+		self.attach_button = ft.ElevatedButton(
+			"Прикрепить изображение",
+			on_click=lambda e : utils.pick_file(self, e)
+		)
+
+		self.submit_button = ft.ElevatedButton(
+			"Применить изменения",
+			on_click=self.submit,
+			disabled=True
+		)
+
+		# Левая колонка — форма
+		self.form = ft.Column(
+			controls=[
+				self.category_dropdown,
+				self.sum_field,
+				self.date_field,
+				self.attach_button,
+				self.file_name_text,
+				self.submit_button,
+			],
+			spacing=15,
+			width=300,
+			alignment=ft.MainAxisAlignment.START,
+		)
+
+		self.page.dialog = ft.AlertDialog(
+			title=ft.Container(ft.Text(""), alignment=ft.alignment.center),
+			content=ft.Text(""),
+			actions=[
+				ft.TextButton("OK", on_click=lambda e: utils.close_dialog(self))
+			],
+			actions_alignment=ft.MainAxisAlignment.CENTER,
+		)
+
+		self.controls.append(self.appbar)
+		self.controls.append(self.form)
+
+
+	def check_fieds_data(self):
+		try:
+			category = self.category_dropdown.value
+			sum_ = self.sum_field.value
+			date_ = self.date_field.value
+			img_base64 = self.frame_base64
+			if all([category, sum_, date_, img_base64]):
+				self.submit_button.disabled = False
+			else:
+				self.submit_button.disabled = True
+		except Exception as e:
+			self.submit_button.disabled = True
+		finally:
+			try:
+				self.submit_button.update()
+			except:
+				print("Submit button disabled")
+
+	""" Submit form data """
+	def submit(self, e):
+		category = self.category_dropdown.value
+		sum_ = self.sum_field.value
+		date_ = self.date_field.value
+		img_base64 = self.frame_base64
+		try:
+			sum_float = float(sum_)
+			date_ = utils.date_to_sql(date_)
+			if date_ is None:
+				print(f"Wrong 'date' field format")
+				utils.show_dialog(self, "Ошибка", "Дата введена некорректно. Придерживаетесь формата: 01.01.2001")
+				return
+
+		except Exception as e:
+			print(f"! Error while converting data: {e}")
+			utils.show_dialog(self, "Ошибка", "Сумма введена некорректно. В поле суммы необходимо вносить только числовые значения")
+			return
+
+		modified_item = json.dumps({
+			"category": category,
+			"sum": sum_float,
+			"creation_date": date_,
+			"image": img_base64
+		})
+		response = requests.post(f'{self.page.ROOT_URL}/edit-item', data=modified_item, headers=self.page.content_provided_request_headers)
+		print(response)
+		utils.show_dialog(self, "Объект изменен", "Чтобы увидеть изменения, перезагрузите страницу")
+		self.page.update()
+
+
 
 """ Creating new item """
 class NewItemView(ft.View):
@@ -338,7 +467,6 @@ class NewItemView(ft.View):
 		self.page.overlay.append(self.file_picker)
 		self.file_path = None
 
-		# AppBar
 		self.appbar = ft.AppBar(
 			leading=ft.IconButton(
 				icon=ft.Icons.ARROW_BACK,
@@ -591,7 +719,7 @@ class NewItemView(ft.View):
 			"creation_date": date_,
 			"image": img_base64
 		})
-		response = requests.post(f'{self.page.ROOT_URL}/add-item', data=new_item, headers=self.page.special_request_headers)
+		response = requests.post(f'{self.page.ROOT_URL}/add-item', data=new_item, headers=self.page.content_provided_request_headers)
 		print(response)
 		utils.show_dialog(self, "Объект сохранен", "Чтобы увидеть изменения, перезагрузите страницу")
 		self.page.update()
@@ -675,7 +803,7 @@ class CategoryView(ft.View):
 			new_category = json.dumps({
 				"category": category,
 			})
-			response = requests.post(f'{self.page.ROOT_URL}/add-category', data=new_category, headers=self.page.special_request_headers)
+			response = requests.post(f'{self.page.ROOT_URL}/add-category', data=new_category, headers=self.page.content_provided_request_headers)
 			print(response)
 			if response.status_code in (200, 204):
 				utils.show_dialog(self, "Категория сохранена", "Данные таблицы обновлены")
@@ -722,7 +850,7 @@ class CategoryView(ft.View):
 			utils.show_dialog(self, "Категория используется!", "Нельзя удалить категорию, которая используется одним или более объектом")
 			return
 		id = category["id"]
-		response = requests.delete(f"{self.page.ROOT_URL}/delete-category/{id}",  headers=self.page.special_request_headers)
+		response = requests.delete(f"{self.page.ROOT_URL}/delete-category/{id}",  headers=self.page.content_provided_request_headers)
 		print(response)
 		if response.status_code in (200, 204):
 			print(f"=> Deleted category id={id}")
@@ -824,7 +952,7 @@ class UserView(ft.View):
 				"password": password,
 				"admin": int(admin)
 			})
-			response = requests.post(f'{self.page.ROOT_URL}/add-user', data=new_user, headers=self.page.special_request_headers)
+			response = requests.post(f'{self.page.ROOT_URL}/add-user', data=new_user, headers=self.page.content_provided_request_headers)
 			print(response)
 			if response.status_code in (200, 204):
 				utils.show_dialog(self, "Пользователь сохранен", "Данные таблицы обновлены")
@@ -875,7 +1003,7 @@ class UserView(ft.View):
 		if username == self.page.current_session_username:
 			utils.show_dialog(self, "Ошибка!", "Нельзя удалить данные пользователя, который используется вами в данный момент")
 			return
-		response = requests.delete(f"{self.page.ROOT_URL}/delete-user/{username}",  headers=self.page.special_request_headers)
+		response = requests.delete(f"{self.page.ROOT_URL}/delete-user/{username}",  headers=self.page.content_provided_request_headers)
 		print(response)
 		if response.status_code in (200, 204):
 			print(f"=> Deleted user = {username}")
