@@ -69,7 +69,7 @@ def update_attachment_data(self, path, name, base64, attachment):
 		os.remove(self.file_path)
 		print("Attached file buffer is not empty. File has been replaced")
 	self.file_path = path
-	self.file_name_text.value = f"Выбран файл: {name}"
+	self.file_name_text.value = f"Выбран файл: {os.path.basename(name)}"
 	self.frame_base64 = base64
 
 

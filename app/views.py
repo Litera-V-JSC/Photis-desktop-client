@@ -88,6 +88,7 @@ class ItemsView(ft.View):
 				ft.DataColumn(ft.Text("Сумма")),
 				ft.DataColumn(ft.Text("Фото")),
 				ft.DataColumn(ft.Text("")),
+				ft.DataColumn(ft.Text("")),
 			],
 			rows=[],
 			expand=True
@@ -196,6 +197,11 @@ class ItemsView(ft.View):
 						text="Удалить",
 						icon=ft.Icons.DELETE, 
 						on_click=lambda e: self.delete_item(id=item['id'])
+					)),
+						ft.DataCell(ft.ElevatedButton(
+						text="Редактировать",
+						icon=ft.Icons.EDIT, 
+						on_click=lambda e: self.edit_item(item=item)
 					))
 				],
 			)
@@ -211,6 +217,16 @@ class ItemsView(ft.View):
 			self.page.filtered_items = None
 			self.page.loaded_items = None
 			self.page.go("/items")
+
+
+	def edit_item(self, e=None, item=None):
+		img_path = urllib.parse.quote(os.path.join(self.page.STORAGE_PATH, 'temp', item['file_name']))
+		category = urllib.parse.quote(item['category'])
+		id_ = urllib.parse.quote(str(item['id']))
+		date = urllib.parse.quote(str(item['creation_date']))
+		sum_ = urllib.parse.quote(str(item['sum']))
+		route = f"/edititem?id={id_}&img={img_path}&category={category}&date={date}&sum={sum_}"
+		self.page.go(route)
 
 
 	""" 
@@ -330,7 +346,7 @@ class ItemsView(ft.View):
 
 """ Item edit panel """
 class ItemEditView(ft.View):
-	def __init__(self, page: ft.Page):
+	def __init__(self, page: ft.Page, id, img, category, date, sum):
 		super().__init__(route='/edititem')
 		self.page = page
 
@@ -357,6 +373,7 @@ class ItemEditView(ft.View):
 			label="Сумма",
 			hint_text="Введите сумму",
 			keyboard_type=ft.KeyboardType.NUMBER,
+			value=sum,
 			width=200
 		)
 		self.date_field = ft.TextField(
@@ -365,10 +382,10 @@ class ItemEditView(ft.View):
 			value=datetime.date.today().strftime('%d.%m.%Y'),
 		)
 
-		self.file_name_text = ft.Text("Файл не выбран", italic=True, size=12)
+		self.file_name_text = ft.Text(f"выбран файл: {img}", italic=True, size=12)
 
 		self.attach_button = ft.ElevatedButton(
-			"Прикрепить изображение",
+			"Изменить изображение",
 			on_click=lambda e : utils.pick_file(self, e)
 		)
 
@@ -454,6 +471,8 @@ class ItemEditView(ft.View):
 		utils.show_dialog(self, "Объект изменен", "Чтобы увидеть изменения, перезагрузите страницу")
 		self.page.update()
 
+	def on_exit(self, e=None):
+		self.page.go('/items')
 
 
 """ Creating new item """

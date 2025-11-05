@@ -74,7 +74,7 @@ def main(page: ft.Page):
 			page.update()
 			page.window.close() 
 
-	def parse_detailed_view_params():
+	def parse_edit_view_params():
 		# parsing params from URL
 		parsed = urllib.parse.urlparse(page.route)
 		params = urllib.parse.parse_qs(parsed.query)
@@ -86,7 +86,7 @@ def main(page: ft.Page):
 
 		# decoding route params 
 		id_ = urllib.parse.unquote(_id)
-		img_ = urllib.parse.unquote(img)
+		img_ = os.path.basename(urllib.parse.unquote(img))
 		category_ = urllib.parse.unquote(category)
 		date_ = urllib.parse.unquote(date)
 		sum_ = urllib.parse.unquote(_sum)
@@ -102,12 +102,13 @@ def main(page: ft.Page):
 			page.views.append(views.ItemsView(page))
 		elif page.route == "/newitem":
 			page.views.append(views.NewItemView(page))
+		elif page.route.startswith("/edititem"):
+			print("---------")
+			page.views.append(views.ItemEditView(page, *parse_edit_view_params()))
 		elif page.route == "/category":
 			page.views.append(views.CategoryView(page))
 		elif page.route == "/user":
 			page.views.append(views.UserView(page))
-		elif page.route.startswith("/detailedview"):
-			page.views.append(views.DetailedView(page, *parse_detailed_view_params()))
 		page.update()
 			
 
