@@ -84,7 +84,7 @@ def main(page: ft.Page):
 		params = urllib.parse.parse_qs(parsed.query)
 
 		id = urllib.parse.unquote(params.get("id", [""])[0])
-		img = urllib.parse.unquote(params.get("img", [""])[0])
+		img = params.get("img", [""])[0]
 		category = urllib.parse.unquote(params.get("category", [""])[0])
 		date = urllib.parse.unquote(params.get("date", [""])[0])
 		sum = urllib.parse.unquote(params.get("sum", [""])[0])

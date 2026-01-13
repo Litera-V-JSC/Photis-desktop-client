@@ -5,6 +5,7 @@ from lib import utils, controls
 import urllib.parse
 import datetime
 import os
+import json
 
 
 class ItemsView(BaseView):
@@ -111,7 +112,7 @@ class ItemsView(BaseView):
 		date_ = utils.date_to_text(item['creation_date'])
 
 		def on_photo_click(e):
-			img_path = urllib.parse.quote(os.path.join(self.page.STORAGE_PATH, 'temp', item['file_name']))
+			img_path = os.path.join(self.page.STORAGE_PATH, 'temp', item['file_name'])
 			utils.open_image(img_path)
 
 		self.table.rows.append(
