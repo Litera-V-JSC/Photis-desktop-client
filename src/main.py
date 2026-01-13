@@ -18,19 +18,18 @@ def main(page: ft.Page):
 		page.ROOT_URL = config["ROOT_URL"] # root url for requests to API
 		page.TIMER_RATE = config["TIMER_RATE"]
 		page.THEME = config["THEME"]
-		print(f"Startup params: theme={page.THEME}, timer rate={page.TIMER_RATE}, root url={page.ROOT_URL}")
+		print(f"<*> Startup params: theme={page.THEME}, timer rate={page.TIMER_RATE}, root url={page.ROOT_URL}")
 		
 		page.STORAGE_PATH = config["STORAGE_PATH"]
 		if page.STORAGE_PATH == "":
+			print("> Parameter STORAGE_PATH is not set - creating new storage...")
 			page.STORAGE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), 'storage'))
 
 		page.TEMP_STORAGE_PATH = os.path.join(page.STORAGE_PATH, 'temp')
 
 		os.makedirs(page.TEMP_STORAGE_PATH, exist_ok=True)
 
-		print(f"Created storage: {page.STORAGE_PATH}")
-		print(f"Created TEMP storage: {page.TEMP_STORAGE_PATH}")
-		print("Config loaded")
+		print(f"> Created TEMP storage: {page.TEMP_STORAGE_PATH}")
 
 
 	# setting app theme
@@ -65,7 +64,7 @@ def main(page: ft.Page):
 	def on_close(e: ft.ControlEvent):
 		if e.data == "close":
 			# Removing temp files
-			print("=> Application is closing. Performing cleanup...")
+			print("> Application is closing. Performing cleanup...")
 			count = 0
 			start_count = len(os.listdir(page.TEMP_STORAGE_PATH))
 			for item_name in os.listdir(page.TEMP_STORAGE_PATH):
@@ -73,7 +72,7 @@ def main(page: ft.Page):
 				if os.path.isfile(item_path):
 					os.remove(item_path)
 					count += 1
-			print(f"Removed {count} of {start_count} files")
+			print(f": Removed {count} of {start_count} files")
 			
 			page.window.prevent_close = False
 			page.window.on_event = None  
@@ -81,22 +80,16 @@ def main(page: ft.Page):
 			page.window.close() 
 
 	def parse_edit_view_params():
-		# parsing params from URL
 		parsed = urllib.parse.urlparse(page.route)
 		params = urllib.parse.parse_qs(parsed.query)
-		_id = params.get("id", [""])[0]
-		img = params.get("img", [""])[0]
-		category = params.get("category", [""])[0]
-		date = params.get("date", [""])[0]
-		_sum = params.get("sum", [""])[0]
 
-		# decoding route params 
-		id_ = urllib.parse.unquote(_id)
-		img_ = os.path.basename(urllib.parse.unquote(img))
-		category_ = urllib.parse.unquote(category)
-		date_ = urllib.parse.unquote(date)
-		sum_ = urllib.parse.unquote(_sum)
-		return [id_, img_, category_, date_, sum_]
+		id = urllib.parse.unquote(params.get("id", [""])[0])
+		img = urllib.parse.unquote(params.get("img", [""])[0])
+		category = urllib.parse.unquote(params.get("category", [""])[0])
+		date = urllib.parse.unquote(params.get("date", [""])[0])
+		sum = urllib.parse.unquote(params.get("sum", [""])[0])
+
+		return [id, img, category, date, sum]
 
 
 	def route_change(route):
@@ -121,14 +114,14 @@ def main(page: ft.Page):
 		page.views.pop()
 		top_view = page.views[-1]
 		page.go(top_view.route)
-	print("=> Views routing created")
+	print("> Views routing created")
 
 	page.window.on_event = on_close
 
 	page.on_route_change = route_change
 	page.on_view_pop = view_pop
 	page.go("/login")
-	print("===> Ready to work <===")
+	print("> Ready to work", '\n', '-'*8)
 
 
 if __name__ == "__main__":

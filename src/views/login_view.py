@@ -54,8 +54,9 @@ class LoginView(BaseView):
 				'Authorization': f'Bearer {token}'
 			}
 			self.result_text.value = "Успешный вход!"
-			print("Logged in !")
+			print("> Login : success")
 			self.page.go("/items")
 		else:
+			print("> Login : invalid user data")
 			self.result_text.value = "Неверный логин или пароль"
 		self.update()

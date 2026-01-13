@@ -87,8 +87,7 @@ def file_picked(self, e: ft.FilePickerResultEvent):
 		self.file_name_text.value = f"Выбран файл: {file.name}"
 	else:
 		update_attachment_data(self, None, "Файл не выбран", None, "picked")
-		self.submit_button.disabled = True
-	self.update()
+	self.page.update()
 
 
 def show_dialog(self, text="", desc=""):
